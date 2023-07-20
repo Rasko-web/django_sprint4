@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy, resolve
 from django.utils.timezone import now
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import (
@@ -66,22 +66,21 @@ class UserPostsListView(MainPostListView):
 
 class PostDetailView(DetailView):
     model = Post
-    template_name = 'blog/detail.html'
+    template_name = "blog/detail.html"
     post_data = None
 
     def get_queryset(self):
-        self.post_data = get_object_or_404(Post, pk=self.kwargs['pk'])
+        self.post_data = get_object_or_404(Post, pk=self.kwargs["pk"])
         if self.post_data.author == self.request.user:
-            return post_all_query().filter(pk=self.kwargs['pk'])
-        return post_published_query().filter(pk=self.kwargs['pk'])
+            return post_all_query().filter(pk=self.kwargs["pk"])
+        return post_published_query().filter(pk=self.kwargs["pk"])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.check_post_data():
-            context['flag'] = True
-            context['form'] = CommentEditForm()
-        context['comments'] = self.object.comments.all().select_related(
-            'author'
+            context["form"] = CommentEditForm()
+            context["comments"] = self.object.comments.all().select_related(
+            "author"
         )
         return context
 
@@ -129,12 +128,12 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         if self.get_object().author != request.user:
-            return redirect('blog:post_detail', pk=self.kwargs['pk'])
+            return redirect('blog:post_detail', pk=self.kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        pk = self.kwargs['pk']
-        return reverse('blog:profile', kwargs={'pk': pk})
+        pk = self.kwargs["pk"]
+        return reverse_lazy('blog:profile', kwargs={"pk": pk})
 
 
 class PostDeleteView(LoginRequiredMixin, DeleteView):
