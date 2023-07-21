@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse, reverse_lazy, resolve
+from django.urls import reverse, reverse_lazy
 from django.utils.timezone import now
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import (
@@ -77,11 +77,9 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.check_post_data():
-            context["form"] = CommentEditForm()
-            context["comments"] = self.object.comments.all().select_related(
-            "author"
-        )
+        context["form"] = CommentEditForm()
+        context["comments"] = self.object.comments.all().select_related(
+            "author")
         return context
 
     def check_post_data(self):
@@ -132,8 +130,8 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        pk = self.kwargs["pk"]
-        return reverse_lazy('blog:profile', kwargs={"pk": pk})
+        username = self.request.user
+        return reverse_lazy('blog:profile', kwargs={'username': username})
 
 
 class PostDeleteView(LoginRequiredMixin, DeleteView):
