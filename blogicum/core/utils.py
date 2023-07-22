@@ -4,7 +4,7 @@ from django.utils import timezone
 from blog.models import Post
 
 
-def post_all_query():
+def get_post_all_query():
     query_set = (
         Post.objects.select_related(
             'category',
@@ -18,7 +18,7 @@ def post_all_query():
 
 
 def post_published_query():
-    query_set = post_all_query().filter(
+    query_set = get_post_all_query().filter(
         pub_date__lte=timezone.now(),
         is_published=True,
         category__is_published=True

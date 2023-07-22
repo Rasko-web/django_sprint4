@@ -1,5 +1,7 @@
+from typing import Any
 from django.core.mail import send_mail
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models.query import QuerySet
 from django.urls import reverse, reverse_lazy
 from django.utils.timezone import now
 from django.shortcuts import redirect, get_object_or_404
@@ -12,10 +14,11 @@ from django.views.generic import (
 )
 
 from core.mixins import CommentMixinView
-from core.utils import post_published_query, post_all_query, get_post_data
+from core.utils import post_published_query, get_post_all_query, get_post_data
 from .forms import CommentEditForm, UserEditForm, PostEditForm
 from blog.models import Category, Post, Comment, User
 
+POST_COUNT = 10
 
 class CommentCreateWiew(LoginRequiredMixin, CreateView):
     model = Comment
@@ -26,8 +29,11 @@ class CommentCreateWiew(LoginRequiredMixin, CreateView):
 class MainPostListView(ListView):
     model = Post
     template_name = 'blog/index.html'
-    queryset = post_published_query()
-    paginate_by = 10
+    paginate_by = POST_COUNT
+
+    def get_queryset(self):
+        queryset = post_published_query()
+        return queryset
 
 
 class CategoryPostListView(MainPostListView):
@@ -55,7 +61,7 @@ class UserPostsListView(MainPostListView):
         username = self.kwargs['username']
         self.author = get_object_or_404(User, username=username)
         if self.author == self.request.user:
-            return post_all_query().filter(author=self.author)
+            return get_post_all_query().filter(author=self.author)
         return super().get_queryset().filter(author=self.author)
 
     def get_context_data(self, **kwargs):
@@ -72,7 +78,7 @@ class PostDetailView(DetailView):
     def get_queryset(self):
         self.post_data = get_object_or_404(Post, pk=self.kwargs["pk"])
         if self.post_data.author == self.request.user:
-            return post_all_query().filter(pk=self.kwargs["pk"])
+            return get_post_all_query().filter(pk=self.kwargs["pk"])
         return post_published_query().filter(pk=self.kwargs["pk"])
 
     def get_context_data(self, **kwargs):
@@ -81,15 +87,6 @@ class PostDetailView(DetailView):
         context["comments"] = self.object.comments.all().select_related(
             "author")
         return context
-
-    def check_post_data(self):
-        return all(
-            (
-                self.post_data.is_published,
-                self.post_data.pub_date <= now(),
-                self.post_data.category.is_published,
-            )
-        )
 
 
 class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -101,7 +98,7 @@ class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
         return self.request.user
 
     def get_success_url(self):
-        username = self.request.user
+        username = self.request.user.username
         return reverse('blog:profile', kwargs={'username': username})
 
 
@@ -115,7 +112,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        username = self.request.user
+        username = self.request.user.username
         return reverse('blog:profile', kwargs={'username': username})
 
 
@@ -130,8 +127,8 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        username = self.request.user
-        return reverse_lazy('blog:profile', kwargs={'username': username})
+        username = self.request.user.username
+        return reverse('blog:profile', kwargs={'username': username})
 
 
 class PostDeleteView(LoginRequiredMixin, DeleteView):
@@ -149,7 +146,7 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
         return context
 
     def get_success_url(self):
-        username = self.request.user
+        username = self.request.user.username
         return reverse_lazy('blog:profile', kwargs={'username': username})
 
 
