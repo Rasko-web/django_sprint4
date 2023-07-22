@@ -1,9 +1,6 @@
-from typing import Any
 from django.core.mail import send_mail
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models.query import QuerySet
 from django.urls import reverse, reverse_lazy
-from django.utils.timezone import now
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import (
     ListView,
@@ -19,6 +16,7 @@ from .forms import CommentEditForm, UserEditForm, PostEditForm
 from blog.models import Category, Post, Comment, User
 
 POST_COUNT = 10
+
 
 class CommentCreateWiew(LoginRequiredMixin, CreateView):
     model = Comment
