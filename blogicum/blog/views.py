@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import (
     ListView,
@@ -11,7 +11,11 @@ from django.views.generic import (
 )
 
 from core.mixins import CommentMixinView
-from core.utils import post_published_query, get_post_all_query, get_post_data
+from core.utils import (
+    get_post_published_query,
+    get_post_all_query,
+    get_post_data
+)
 from .forms import CommentEditForm, UserEditForm, PostEditForm
 from blog.models import Category, Post, Comment, User
 
@@ -30,8 +34,7 @@ class MainPostListView(ListView):
     paginate_by = POST_COUNT
 
     def get_queryset(self):
-        queryset = post_published_query()
-        return queryset
+        return get_post_published_query()
 
 
 class CategoryPostListView(MainPostListView):
@@ -77,7 +80,7 @@ class PostDetailView(DetailView):
         self.post_data = get_object_or_404(Post, pk=self.kwargs["pk"])
         if self.post_data.author == self.request.user:
             return get_post_all_query().filter(pk=self.kwargs["pk"])
-        return post_published_query().filter(pk=self.kwargs["pk"])
+        return get_post_published_query().filter(pk=self.kwargs["pk"])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -145,7 +148,7 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_success_url(self):
         username = self.request.user.username
-        return reverse_lazy('blog:profile', kwargs={'username': username})
+        return reverse('blog:profile', kwargs={'username': username})
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):

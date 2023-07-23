@@ -17,7 +17,7 @@ def get_post_all_query():
     return query_set
 
 
-def post_published_query():
+def get_post_published_query():
     query_set = get_post_all_query().filter(
         pub_date__lte=timezone.now(),
         is_published=True,
